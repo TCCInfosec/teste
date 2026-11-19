@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSeek</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: radial-gradient(circle at center, #1b0a2a, #090310, #020005);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: #e0d5f5;
+            position: relative;
+        }
+        .screen {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(100px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .screen.exit-left {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-100px);
+        }
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        #game-frame-wrapper {
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(168, 85, 247, 0.5);
+            box-shadow: 0 0 30px rgba(126, 34, 206, 0.5);
+            border-radius: 8px;
+            background: #020005;
+        }
+        #game-frame {
+            display: block;
+            border: none;
+            background: #020005;
+            overflow: hidden;
+            transform-origin: top left;
+        }
+
+        .btn-voltar-menu {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 999;
+            background: rgba(30, 10, 48, 0.8);
+            color: #e0d5f5;
+            border: 1px solid rgba(168, 85, 247, 0.5);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .btn-voltar-menu:hover {
+            background: #7e22ce;
+        }
+        .menu-container {
+            text-align: center;
+            backdrop-filter: blur(8px);
+            background: rgba(20, 8, 35, 0.45);
+            width: 480px;
+            height: 480px;
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid rgba(138, 43, 226, 0.25);
+            box-shadow: 0 0 35px rgba(88, 28, 135, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-title {
+            font-size: 3rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #d8b4fe;
+            text-shadow: 0 0 15px rgba(168, 85, 247, 0.6), 0 0 30px rgba(126, 34, 206, 0.4);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #9333ea;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+        .button-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, rgba(67, 26, 99, 0.8), rgba(30, 10, 48, 0.9));
+            color: #f3e8ff;
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, rgba(126, 34, 206, 0.9), rgba(67, 26, 99, 0.9));
+            border-color: #c084fc;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .saves-screen,
+        .settings-screen {
+            width: 90vw;
+            max-width: 1100px;
+            height: 85vh;
+            background: rgba(15, 6, 28, 0.7);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 0 35px rgba(88, 28, 135, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            gap: 25px;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: rgba(28, 11, 48, 0.6);
+            border: 1px dashed rgba(168, 85, 247, 0.5);
+            border-radius: 14px;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .sidebar-btn {
+            width: 100%;
+            height: 140px;
+            background: transparent;
+            color: #d8b4fe;
+            border: none;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(168, 85, 247, 0.2);
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+        }
+
+        .saves-main,
+        .settings-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+        }
+
+        .polaroids-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 20px;
+            flex: 1;
+            padding: 10px;
+            place-items: center;
+        }
+
+        .polaroid-card {
+            position: relative;
+            background: #ffffff;
+            padding: 10px 10px 25px 10px;
+            border-radius: 4px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+            max-width: 210px;
+        }
+
+        .polaroid-card:hover {
+            transform: scale(1.06) rotate(0deg) !important;
+            z-index: 10;
+            box-shadow: 0 0 25px rgba(192, 132, 252, 0.8);
+        }
+
+        .polaroid-card:nth-child(1) { transform: rotate(-5deg); }
+        .polaroid-card:nth-child(2) { transform: rotate(3deg); }
+        .polaroid-card:nth-child(3) { transform: rotate(-3deg); }
+        .polaroid-card:nth-child(4) { transform: rotate(4deg); }
+        .polaroid-card:nth-child(5) { transform: rotate(-2deg); }
+        .polaroid-card:nth-child(6) { transform: rotate(5deg); }
+
+        .polaroid-img {
+            width: 100%;
+            height: 150px;
+            background-color: #0d0614;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .save-title {
+            text-align: center;
+            color: #1b0a2a;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .tape {
+            position: absolute;
+            top: -12px;
+            left: 30%;
+            width: 70px;
+            height: 22px;
+            background: rgba(224, 213, 245, 0.5);
+            backdrop-filter: blur(3px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transform: rotate(-8deg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+
+        .tape-right {
+            left: auto;
+            right: 15%;
+            transform: rotate(10deg);
+        }
+        .settings-title {
+            color: #d8b4fe;
+            font-size: 1.6rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 18px;
+            text-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 20px;
+            flex: 1;
+            padding: 10px;
+        }
+
+        .settings-card {
+            background: rgba(28, 11, 48, 0.75);
+            border: 1px dashed rgba(168, 85, 247, 0.5);
+            border-radius: 14px;
+            padding: 20px 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.25s ease;
+        }
+
+        .settings-card:hover {
+            border-color: #c084fc;
+            box-shadow: 0 0 22px rgba(168, 85, 247, 0.35);
+            background: rgba(40, 16, 68, 0.8);
+        }
+
+        .settings-card h3 {
+            color: #c084fc;
+            font-size: 1.05rem;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .settings-card p {
+            color: #a78bca;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .settings-card select {
+            background: #230d3d;
+            color: #e0d5f5;
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            padding: 10px 12px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.95rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .settings-card select:hover {
+            border-color: #c084fc;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 58px;
+            height: 30px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            inset: 0;
+            background: rgba(60, 30, 90, 0.9);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .slider::before {
+            content: "";
+            position: absolute;
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            top: 3px;
+            background: #d8b4fe;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+        }
+
+        .switch input:checked + .slider {
+            background: #7e22ce;
+            border-color: #c084fc;
+            box-shadow: 0 0 14px rgba(168, 85, 247, 0.6);
+        }
+
+        .switch input:checked + .slider::before {
+            transform: translateX(28px);
+            background: #ffffff;
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(126, 34, 206, 0.95);
+            color: #ffffff;
+            padding: 12px 22px;
+            border-radius: 8px;
+            border: 1px solid #c084fc;
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.6);
+            font-size: 0.95rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+       
+        .credits-screen {
+            width: 90vw;
+            max-width: 800px;
+            height: 75vh;
+            background: rgba(15, 6, 28, 0.85);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 0 35px rgba(88, 28, 135, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+        }
+
+        .credits-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        .credits-section h3 {
+            color: #c084fc;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .credits-section p {
+            color: #e0d5f5;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="menu-container screen active" id="menu-inicial">
+        <h1 class="game-title">CyberSeek</h1>
+
+        <nav class="button-list">
+            <button class="btn" id="btn-iniciar">Iniciar</button>
+            <button class="btn" id="btn-salvamentos">Salvamentos</button>
+            <button class="btn" id="btn-configuracoes">Configurações</button>
+            <button class="btn" id="btn-creditos">Creditos</button>
+        </nav>
+    </div>
+
+    <div class="screen" id="game-container">
+        <button class="btn-voltar-menu" id="btn-voltar">← Menu Principal</button>
+        <div id="game-frame-wrapper">
+            <iframe
+                id="game-frame"
+                src="http://127.0.0.1:51264/index.html
+                "
+                frameborder="0"
+                scrolling="no"
+                allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+    <div class="screen saves-screen" id="tela-salvamentos">
+        <nav class="sidebar">
+            <button class="sidebar-btn" id="side-salvar">Salvar</button>
+            <button class="sidebar-btn" id="side-carregar">Logar / Carregar</button>
+            <button class="sidebar-btn" id="side-config">Configurações</button>
+            <button class="sidebar-btn" id="side-historico">Histórico</button>
+            <button class="sidebar-btn" id="side-menu">Menu principal</button>
+        </nav>
+
+        <div class="saves-main">
+            <div class="polaroids-grid">
+                <div class="polaroid-card">
+                    <div class="tape"></div>
+                    <div class="polaroid-img"><span style="color: #6b21a8; font-size: 0.8rem;">[ Slot 01 ]</span></div>
+                    <p class="save-title">Save 01 - Cap. 1</p>
+                </div>
+                <div class="polaroid-card">
+                    <div class="tape tape-right"></div>
+                    <div class="polaroid-img"><span style="color: #6b21a8; font-size: 0.8rem;">[ Slot 02 ]</span></div>
+                    <p class="save-title">Save 02 - Cap. 1</p>
+                </div>
+                <div class="polaroid-card">
+                    <div class="tape"></div>
+                    <div class="polaroid-img"><span style="color: #6b21a8; font-size: 0.8rem;">[ Slot 03 ]</span></div>
+                    <p class="save-title">Save 03 - Cap. 2</p>
+                </div>
+                <div class="polaroid-card">
+                    <div class="tape tape-right"></div>
+                    <div class="polaroid-img"><span style="color: #6b21a8; font-size: 0.8rem;">[ Slot 04 ]</span></div>
+                    <p class="save-title">Vazio</p>
+                </div>
+                <div class="polaroid-card">
+                    <div class="tape"></div>
+                    <div class="polaroid-img"><span style="color: #6b21a8; font-size: 0.8rem;">[ Slot 05 ]</span></div>
+                    <p class="save-title">Vazio</p>
+                </div>
+                <div class="polaroid-card">
+                    <div class="tape tape-right"></div>
+                    <div class="polaroid-img"><span style="color: #6b21a8; font-size: 0.8rem;">[ Slot 06 ]</span></div>
+                    <p class="save-title">Vazio</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="screen settings-screen" id="tela-configuracoes">
+        <nav class="sidebar">
+            <button class="sidebar-btn" id="cfg-side-salvar">Salvar</button>
+            <button class="sidebar-btn" id="cfg-side-carregar">Logar / Carregar</button>
+            <button class="sidebar-btn" id="cfg-side-config">Configurações</button>
+            <button class="sidebar-btn" id="cfg-side-historico">Histórico</button>
+            <button class="sidebar-btn" id="cfg-side-menu">Menu principal</button>
+        </nav>
+
+        <div class="settings-main">
+            <h2 class="settings-title">Configurações</h2>
+
+            <div class="settings-grid">
+                <div class="settings-card">
+                    <h3>Tamanho da Fonte</h3>
+                    <p>Ajusta o tamanho dos textos da interface.</p>
+                    <select id="tamanho-fonte">
+                        <option value="pequeno">Pequeno</option>
+                        <option value="medio" selected>Médio</option>
+                        <option value="grande">Grande</option>
+                    </select>
+                </div>
+                <div class="settings-card">
+                    <h3>Modo Tela Cheia</h3>
+                    <p>Exibe o jogo ocupando toda a tela do monitor.</p>
+                    <div class="settings-row">
+                        <span style="font-size: 0.9rem; color: #d8b4fe;">Tela cheia</span>
+                        <label class="switch">
+                            <input type="checkbox" id="tela-cheia">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <h3>Velocidade do Texto</h3>
+                    <p>Controla a velocidade dos diálogos dentro do jogo.</p>
+                    <select id="velocidade-texto">
+                        <option value="lenta">Lenta</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="rapida">Rápida</option>
+                        <option value="instantanea">Instantânea</option>
+                    </select>
+                </div>
+                <div class="settings-card">
+                    <h3>Volume</h3>
+                    <p>Controla o volume da trilha sonora e dos efeitos.</p>
+                    <div class="settings-row">
+                        <input type="range" id="volume" min="0" max="100" value="70"
+                               style="width: 100%; accent-color: #a855f7; cursor: pointer;">
+                        <span id="volume-valor" style="color: #d8b4fe; font-size: 0.9rem; min-width: 42px; text-align: right;">70%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="screen credits-screen" id="tela-creditos">
+        <h2 class="game-title" style="font-size: 2rem; margin-bottom: 10px;">Créditos</h2>
+
+        <div class="credits-content">
+            <div class="credits-section">
+                <h3>Codigos da tela inicial e login</h3>
+                <p>Yuri</p>
+            </div>
+            <div class="credits-section">
+                <h3>Pesquisa</h3>
+                <p>Maria Clara S.</p>
+            </div>
+            <div class="credits-section">
+                <h3>Trilha Sonora & Arte</h3>
+                <p>Clara Maria</p>
+            </div>
+            <div class="credits-section">
+                <h3>Engine</h3>
+                <p>GameMaker</p>
+            </div>
+            <div class="credits-section">
+                <h3>Agradecimentos Especiais</h3>
+                <p>Professores orientadores</p>
+            </div>
+        </div>
+        <br>
+        <button class="btn" id="btn-voltar-creditos" style="max-width: 200px; margin-top: 20px;">Voltar ao Menu</button>
+    </div>
+    <div class="toast" id="toast">Configurações salvas!</div>
+
+    <script>
+        const GAME_WIDTH = 1280;
+        const GAME_HEIGHT = 720;
+
+        const gameFrame = document.getElementById('game-frame');
+        const gameWrapper = document.getElementById('game-frame-wrapper');
+
+        function ajustarIframe() {
+            const larguraDisponivel = window.innerWidth * 0.92;
+            const alturaDisponivel = window.innerHeight * 0.86;
+
+            const escala = Math.min(
+                larguraDisponivel / GAME_WIDTH,
+                alturaDisponivel / GAME_HEIGHT
+            );
+
+            gameFrame.style.width = GAME_WIDTH + 'px';
+            gameFrame.style.height = GAME_HEIGHT + 'px';
+            gameFrame.style.transform = 'scale(' + escala + ')';
+
+            gameWrapper.style.width = (GAME_WIDTH * escala) + 'px';
+            gameWrapper.style.height = (GAME_HEIGHT * escala) + 'px';
+        }
+
+        window.addEventListener('resize', ajustarIframe);
+        window.addEventListener('load', ajustarIframe);
+        ajustarIframe();
+        const TAMANHOS_FONTE = {
+            pequeno: '14px',
+            medio: '16px',
+            grande: '19px'
+        };
+
+        const CHAVE_FONTE = 'cyberseek_tamanho_fonte';
+        const selectFonte = document.getElementById('tamanho-fonte');
+
+        function aplicarTamanhoFonte(valor) {
+            const tamanho = TAMANHOS_FONTE[valor] || TAMANHOS_FONTE.medio;
+            document.documentElement.style.fontSize = tamanho;
+            selectFonte.value = TAMANHOS_FONTE[valor] ? valor : 'medio';
+        }
+
+        function carregarTamanhoFonte() {
+            let salvo = null;
+            try {
+                salvo = localStorage.getItem(CHAVE_FONTE);
+            } catch (e) {
+                salvo = null;
+            }
+            aplicarTamanhoFonte(salvo || 'medio');
+        }
+
+        function salvarTamanhoFonte(valor) {
+            try {
+                localStorage.setItem(CHAVE_FONTE, valor);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        selectFonte.addEventListener('change', (e) => {
+            aplicarTamanhoFonte(e.target.value);
+            salvarTamanhoFonte(e.target.value);
+        });
+
+        carregarTamanhoFonte();
+        const VELOCIDADES_TEXTO = {
+            lenta: 15,
+            normal: 30,
+            rapida: 60,
+            instantanea: 9999
+        };
+
+        const CHAVE_VELOCIDADE = 'cyberseek_velocidade_texto';
+        const selectVelocidade = document.getElementById('velocidade-texto');
+
+        function obterVelocidadeTexto() {
+            return VELOCIDADES_TEXTO[selectVelocidade.value] ?? VELOCIDADES_TEXTO.normal;
+        }
+
+        function aplicarVelocidadeTexto(valor) {
+            const chave = VELOCIDADES_TEXTO[valor] ? valor : 'normal';
+            selectVelocidade.value = chave;
+        }
+
+        function carregarVelocidadeTexto() {
+            let salvo = null;
+            try {
+                salvo = localStorage.getItem(CHAVE_VELOCIDADE);
+            } catch (e) {
+                salvo = null;
+            }
+            aplicarVelocidadeTexto(salvo || 'normal');
+        }
+
+        function salvarVelocidadeTexto(valor) {
+            try {
+                localStorage.setItem(CHAVE_VELOCIDADE, valor);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+        function enviarVelocidadeParaJogo() {
+            const valor = obterVelocidadeTexto();
+            try {
+                gameFrame.contentWindow.postMessage({
+                    tipo: 'cyberseek:velocidadeTexto',
+                    cps: valor,
+                    opcao: selectVelocidade.value
+                }, '*');
+            } catch (e) {  }
+        }
+
+        selectVelocidade.addEventListener('change', (e) => {
+            aplicarVelocidadeTexto(e.target.value);
+            salvarVelocidadeTexto(e.target.value);
+            enviarVelocidadeParaJogo();
+        });
+        gameFrame.addEventListener('load', () => {
+            setTimeout(enviarVelocidadeParaJogo, 300);
+        });
+
+        carregarVelocidadeTexto();
+        const toast = document.getElementById('toast');
+        let toastTimer = null;
+
+        function mostrarToast(mensagem) {
+            toast.textContent = mensagem;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        function salvarConfiguracoes() {
+            try {
+                localStorage.setItem('cyberseek_volume', document.getElementById('volume').value);
+                localStorage.setItem('cyberseek_tela_cheia', document.getElementById('tela-cheia').checked ? '1' : '0');
+                localStorage.setItem(CHAVE_FONTE, selectFonte.value);
+                localStorage.setItem(CHAVE_VELOCIDADE, selectVelocidade.value);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function carregarConfiguracoes() {
+            try {
+                const volume = localStorage.getItem('cyberseek_volume');
+                if (volume !== null) {
+                    document.getElementById('volume').value = volume;
+                    document.getElementById('volume-valor').textContent = volume + '%';
+                }
+
+                const telaCheia = localStorage.getItem('cyberseek_tela_cheia');
+                if (telaCheia === '1') document.getElementById('tela-cheia').checked = true;
+            } catch (e) {}
+        }
+
+        carregarConfiguracoes();
+
+        document.getElementById('volume').addEventListener('change', () => salvarConfiguracoes());
+        document.getElementById('tela-cheia').addEventListener('change', () => salvarConfiguracoes());
+
+        function mudarTela(idTelaAtiva) {
+            const screens = document.querySelectorAll('.screen');
+
+            screens.forEach(screen => {
+                if (screen.classList.contains('active')) {
+                    screen.classList.remove('active');
+                    screen.classList.add('exit-left');
+
+                    setTimeout(() => {
+                        screen.classList.remove('exit-left');
+                    }, 500);
+                } else {
+                    screen.classList.remove('exit-left');
+                }
+            });
+
+            setTimeout(() => {
+                document.getElementById(idTelaAtiva).classList.add('active');
+                if (idTelaAtiva === 'game-container') {
+                    ajustarIframe();
+                }
+            }, 50);
+        }
+
+        const chkTelaCheia = document.getElementById('tela-cheia');
+        const btnVoltar = document.getElementById('btn-voltar');
+
+        document.getElementById('btn-iniciar').addEventListener('click', () => {
+            gameFrame.src = gameFrame.src;
+            mudarTela('game-container');
+        });
+
+        btnVoltar.addEventListener('click', () => {
+            mudarTela('menu-inicial');
+        });
+
+        document.getElementById('btn-salvamentos').addEventListener('click', () => {
+            mudarTela('tela-salvamentos');
+        });
+
+        document.getElementById('btn-creditos').addEventListener('click', () => {
+            mudarTela('tela-creditos');
+        });
+
+        document.getElementById('btn-voltar-creditos').addEventListener('click', () => {
+            mudarTela('menu-inicial');
+        });
+        document.getElementById('btn-configuracoes').addEventListener('click', () => {
+            mudarTela('tela-configuracoes');
+        });
+
+        document.getElementById('cfg-side-salvar').addEventListener('click', () => {
+            const ok = salvarConfiguracoes();
+            enviarVelocidadeParaJogo();
+            mostrarToast(ok ? 'Configurações salvas!' : 'Não foi possível salvar neste navegador.');
+            mudarTela('tela-salvamentos');
+        });
+
+        document.getElementById('cfg-side-carregar').addEventListener('click', () => {
+            carregarTamanhoFonte();
+            carregarVelocidadeTexto();
+            carregarConfiguracoes();
+            enviarVelocidadeParaJogo();
+            mostrarToast('Configurações carregadas!');
+        });
+
+        document.getElementById('cfg-side-config').addEventListener('click', () => {
+        });
+
+        document.getElementById('cfg-side-historico').addEventListener('click', () => {
+            alert('Carregando histórico...');
+        });
+
+        document.getElementById('cfg-side-menu').addEventListener('click', () => {
+            mudarTela('menu-inicial');
+        });
+        const volumeInput = document.getElementById('volume');
+        const volumeValor = document.getElementById('volume-valor');
+        volumeInput.addEventListener('input', (e) => {
+            volumeValor.textContent = e.target.value + '%';
+        });
+        chkTelaCheia.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        document.getElementById('side-menu').addEventListener('click', () => {
+            mudarTela('menu-inicial');
+        });
+        document.getElementById('side-menu').addEventListener('click', () => {
+            mudarTela('menu-inicial');
+        });
+
+        document.getElementById('side-config').addEventListener('click', () => {
+            mudarTela('tela-configuracoes');
+        });
+
+        document.getElementById('side-historico').addEventListener('click', () => {
+            alert('Carregando histórico...');
+        });
+
+        document.getElementById('side-salvar').addEventListener('click', () => {
+            alert('Jogo salvo com sucesso!');
+        });
+
+        document.getElementById('side-carregar').addEventListener('click', () => {
+            alert('Logando nos arquivos de salvamento...');
+        });
+    </script>
+</body>
+</html>
